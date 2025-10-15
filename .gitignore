@@ -1,0 +1,105 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# IDE - NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Application specific
+application-local.yml
+application-dev.yml
+application-prod.yml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Package files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Virtual machine crash logs
+hs_err_pid*
