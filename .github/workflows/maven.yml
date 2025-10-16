@@ -67,23 +67,19 @@ jobs:
 
       - name: Run Checkstyle (code style)
         run: ./mvnw checkstyle:check
-        continue-on-error: true
 
       - name: Run SpotBugs (static analysis)
         run: ./mvnw spotbugs:check
-        continue-on-error: true
 
       - name: Generate SpotBugs SARIF
         if: always()
         run: ./mvnw spotbugs:spotbugs -Dspotbugs.outputFormat=sarif -Dspotbugs.outputFile=spotbugs.sarif
-        continue-on-error: true
 
       - name: Upload SpotBugs SARIF to GitHub
         if: always() && hashFiles('spotbugs.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: spotbugs.sarif
-        continue-on-error: true
 
   security-scan:
     name: Security Scan
@@ -214,14 +210,13 @@ jobs:
           image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
           format: 'sarif'
           output: 'trivy-results.sarif'
-        continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always() && hashFiles('trivy-results.sarif') != ''
         with:
           sarif_file: 'trivy-results.sarif'
-        continue-on-error: true
+
 
       - name: Upload Trivy SARIF as artifact
         uses: actions/upload-artifact@v4
@@ -278,7 +273,6 @@ jobs:
           done
           echo "Service failed to start, checking logs..."
           docker logs user-service-test
-        continue-on-error: true
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.13.0
