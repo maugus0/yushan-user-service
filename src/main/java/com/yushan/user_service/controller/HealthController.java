@@ -13,8 +13,8 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping("/health")
-    public Map health() {
-        Map response = new HashMap<>();
+    public Map<String, Object> health() {
+        Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
         response.put("service", "user-service");
         response.put("timestamp", LocalDateTime.now());
