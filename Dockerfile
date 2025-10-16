@@ -1,29 +1,5 @@
-# Multi-stage build for Spring Boot User Service
-FROM eclipse-temurin:21-jdk-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Copy Maven wrapper and pom.xml first for better caching
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
-
-# Make mvnw executable
-RUN chmod +x ./mvnw
-
-# Download dependencies and plugins (this layer will be cached if pom.xml doesn't change)
-RUN --mount=type=cache,target=/root/.m2/repository \
-    ./mvnw dependency:go-offline -B
-
-# Copy source code
-COPY src src
-
-# Build the application with Maven cache (skip tests for faster builds)
-RUN --mount=type=cache,target=/root/.m2/repository \
-    ./mvnw clean package -DskipTests
-
-# Runtime stage
+# Runtime-only Dockerfile for CI/CD
+# JAR is built by GitHub Actions before Docker build
 FROM eclipse-temurin:21-jre-alpine
 
 # Create app user for security
@@ -33,8 +9,9 @@ RUN addgroup -g 1001 -S appgroup && \
 # Set working directory
 WORKDIR /app
 
-# Copy the JAR file from builder stage
-COPY --from=builder /app/target/*.jar app.jar
+# Copy the pre-built JAR file from target directory
+# This JAR is built by the CI/CD pipeline before docker build
+COPY target/*.jar app.jar
 
 # Change ownership to app user
 RUN chown -R appuser:appgroup /app
@@ -49,5 +26,10 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application with optimized JVM settings
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", \
+    "app.jar"]
