@@ -66,13 +66,13 @@ docker-compose up -d
 ## Step 2: Clone the User Service Repository
 
 ```bash
-git clone <repository-url>/yushan-user-service
+git clone https://github.com/maugus0/yushan-user-service.git
 cd yushan-user-service
 
 # Option 1: Run with Docker (Recommended)
 docker-compose up -d
 
-# Option 2: Run locally
+# Option 2: Run locally (in case you run locally, then you need postgre 15 to be running beforehand)
 ./mvnw spring-boot:run
 ```
 
