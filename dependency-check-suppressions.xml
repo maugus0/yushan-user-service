@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+        OWASP Dependency-Check Suppressions File
+        ========================================
+
+        This file contains suppressions for false positives in OWASP Dependency-Check.
+        Add suppressions here when you've verified that a reported vulnerability:
+
+        1. Does not apply to your usage of the library
+        2. Is a false positive (wrong CPE match)
+        3. Has been accepted as a known risk
+        4. Is already patched in your version
+
+        IMPORTANT: Always document WHY each suppression exists!
+
+        For more information:
+        https://jeremylong.github.io/DependencyCheck/general/suppression.html
+    -->
+
+    <!-- ========================================
+         EXAMPLE SUPPRESSIONS
+         ======================================== -->
+
+    <!-- Example 1: Suppress a specific CVE for a specific library -->
+    <!--
+    <suppress>
+        <notes><![CDATA[
+            CVE-2023-12345 does not apply because we don't use the affected component.
+            The vulnerability is in the XML parser, but we only use JSON functionality.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.example/vulnerable\-library@.*$</packageUrl>
+        <cve>CVE-2023-12345</cve>
+    </suppress>
+    -->
+
+    <!-- Example 2: Suppress based on file name pattern -->
+    <!--
+    <suppress>
+        <notes><![CDATA[
+            This dependency is only used in test scope and the vulnerability is not exploitable in tests.
+        ]]></notes>
+        <filePath regex="true">.*test-dependency-.*\.jar</filePath>
+        <cpe>cpe:/a:vendor:product</cpe>
+    </suppress>
+    -->
+
+    <!-- Example 3: Suppress all vulnerabilities for a test dependency -->
+    <!--
+    <suppress>
+        <notes><![CDATA[
+            Test-only dependency, not included in production builds.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.mockito/mockito\-core@.*$</packageUrl>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    -->
+
+    <!-- ========================================
+         COMMON FALSE POSITIVES FOR SPRING BOOT
+         ======================================== -->
+
+    <!-- Suppress old Tomcat CVEs (Spring Boot keeps Tomcat updated) -->
+    <suppress>
+        <notes><![CDATA[
+            Spring Boot's embedded Tomcat is regularly updated with security patches.
+            This suppresses very old CVEs that are already fixed in current versions.
+            Review and update this suppression when upgrading Spring Boot versions.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*@.*$</packageUrl>
+        <vulnerabilityName regex="true">^CVE-201[0-5]-.*$</vulnerabilityName>
+    </suppress>
+
+    <!-- Suppress false positives for Spring Framework itself -->
+    <suppress>
+        <notes><![CDATA[
+            Common false positive: Dependency-Check sometimes incorrectly matches
+            Spring Framework versions. Verify actual Spring Boot version in pom.xml
+            and check https://spring.io/security for real vulnerabilities.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-core@.*$</packageUrl>
+        <cpe>cpe:/a:vmware:spring_framework</cpe>
+    </suppress>
+
+    <!-- ========================================
+         PROJECT-SPECIFIC SUPPRESSIONS
+         ======================================== -->
+
+    <!-- Add your project-specific suppressions below this line -->
+
+    <!-- Example: If you get false positives for H2 database -->
+    <!--
+    <suppress>
+        <notes><![CDATA[
+            H2 database is only used for testing, not in production.
+            CVE applies to remote connections which are disabled in our test configuration.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
+        <cve>CVE-2022-45868</cve>
+    </suppress>
+    -->
+
+    <!-- Example: Suppress known issues in PostgreSQL driver -->
+    <!--
+    <suppress>
+        <notes><![CDATA[
+            CVE-2024-1597 in PostgreSQL JDBC driver is related to SQL injection
+            but we use parameterized queries throughout the application.
+            Upgrade to postgresql:42.7.2+ when available.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.postgresql/postgresql@.*$</packageUrl>
+        <cve>CVE-2024-1597</cve>
+    </suppress>
+    -->
+
+</suppressions>

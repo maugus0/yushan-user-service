@@ -1,0 +1,348 @@
+name: User Service CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+# Avoid overlapping runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  security-events: write
+  packages: write
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Unit Tests
+        run: ./mvnw test -Dspring.profiles.active=test
+
+  lint-quality:
+    name: Lint & Quality Checks
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run Checkstyle (code style)
+        run: ./mvnw checkstyle:check
+        continue-on-error: true
+
+      - name: Run SpotBugs (static analysis)
+        run: ./mvnw spotbugs:check
+        continue-on-error: true
+
+      - name: Generate SpotBugs SARIF
+        if: always()
+        run: ./mvnw spotbugs:spotbugs -Dspotbugs.outputFormat=sarif -Dspotbugs.outputFile=spotbugs.sarif
+        continue-on-error: true
+
+      - name: Upload SpotBugs SARIF to GitHub
+        if: always() && hashFiles('spotbugs.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: spotbugs.sarif
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache OWASP Dependency-Check data
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: ${{ runner.os }}-dc-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-dc-
+
+      - name: Run OWASP Dependency Check
+        run: ./mvnw org.owasp:dependency-check-maven:check
+        continue-on-error: true
+
+      - name: Upload Dependency-Check SARIF
+        if: always() && hashFiles('target/dependency-check-report.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: target/dependency-check-report.sarif
+        continue-on-error: true
+
+      - name: Upload OWASP Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owasp-dependency-check-report
+          path: |
+            target/dependency-check-report.html
+            target/dependency-check-report.xml
+
+  docker-build:
+    name: Build Docker Image & Scan Vulnerabilities
+    runs-on: ubuntu-latest
+    needs: [unit-tests, lint-quality, security-scan]
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Maven dependencies for Docker build
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('trivy-results.sarif') != ''
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy SARIF as artifact
+        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('trivy-results.sarif') != ''
+        with:
+          name: trivy-sarif
+          path: trivy-results.sarif
+
+      - name: Save image digest
+        run: echo "${{ steps.build.outputs.digest }}" > image-digest.txt
+
+      - name: Upload image digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-digest
+          path: image-digest.txt
+          retention-days: 30
+
+  dast-zap:
+    name: OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+
+    # Run ZAP scan against local Docker container
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull Docker image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker pull ghcr.io/${{ github.repository }}:latest
+
+      - name: Start User Service container
+        run: |
+          docker run -d \
+            --name user-service-test \
+            -p 8081:8081 \
+            -e SPRING_PROFILES_ACTIVE=test \
+            -e DB_HOST=localhost \
+            -e EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://localhost:8761/eureka/ \
+            ghcr.io/${{ github.repository }}:latest
+          
+          # Wait for service to be ready
+          for i in {1..30}; do
+            if curl -s http://localhost:8081/actuator/health > /dev/null; then
+              echo "Service is ready"
+              break
+            fi
+            echo "Waiting for service to start... ($i/30)"
+            sleep 5
+          done
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.13.0
+        with:
+          target: 'http://localhost:8081'
+          cmd_options: "-a -m 10 -J zap.json -w zap.md -r zap.html"
+
+      - name: Stop container
+        if: always()
+        run: docker stop user-service-test && docker rm user-service-test
+
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: |
+            zap.html
+            zap.json
+            zap.md
+
+  generate-reports:
+    name: Generate CI Summary & Collect Reports
+    runs-on: ubuntu-latest
+    needs: [unit-tests, lint-quality, security-scan, docker-build, dast-zap]
+    if: always()
+    permissions:
+      contents: read
+      checks: write
+
+    steps:
+      - name: Download OWASP report
+        uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: owasp-dependency-check-report
+          path: reports/owasp
+        continue-on-error: true
+
+      - name: Download Trivy SARIF
+        uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: trivy-sarif
+          path: reports/trivy
+        continue-on-error: true
+
+      - name: Download ZAP report
+        uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: reports/zap
+        continue-on-error: true
+
+      - name: Create CI summary
+        if: always()
+        run: |
+          {
+            echo "# User Service – CI/CD Reports";
+            echo "- Commit: $GITHUB_SHA";
+            echo "- Branch: ${GITHUB_REF##*/}";
+            echo "- Event: ${{ github.event_name }}";
+            echo "";
+            echo "## Pipeline Status";
+            echo "- Unit Tests: ${{ needs.unit-tests.result }}";
+            echo "- Lint & Quality: ${{ needs.lint-quality.result }}";
+            echo "- Security Scan: ${{ needs.security-scan.result }}";
+            echo "- Docker Build: ${{ needs.docker-build.result }}";
+            echo "- ZAP Scan: ${{ needs.dast-zap.result }}";
+            echo "";
+            echo "## Artifacts";
+            if [ -f reports/owasp/dependency-check-report.html ]; then 
+              echo "✅ OWASP Dependency-Check: reports/owasp/dependency-check-report.html"; 
+            else 
+              echo "❌ OWASP Dependency-Check: Not available"; 
+            fi
+            if [ -f reports/trivy/trivy-results.sarif ]; then 
+              echo "✅ Trivy SARIF: reports/trivy/trivy-results.sarif"; 
+            else 
+              echo "❌ Trivy SARIF: Not available"; 
+            fi
+            if [ -f reports/zap/zap.html ]; then 
+              echo "✅ ZAP Security Report: reports/zap/zap.html"; 
+            else 
+              echo "❌ ZAP Security Report: Not available"; 
+            fi
+          } > summary.md
+          
+          cat summary.md
+
+      - name: Upload consolidated report bundle
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-reports
+          path: |
+            summary.md
+            reports/**
