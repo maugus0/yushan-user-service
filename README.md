@@ -37,8 +37,7 @@
 Before setting up the User Service, ensure you have:
 1. **Java 21** installed
 2. **Maven 3.8+** or use the included Maven wrapper
-3. **PostgreSQL 15** running
-4. **Eureka Service Registry** running
+3. **Eureka Service Registry** running
 
 ---
 ## Step 1: Start Eureka Service Registry
