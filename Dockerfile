@@ -1,5 +1,31 @@
-# Runtime-only Dockerfile for CI/CD
-# JAR is built by GitHub Actions before Docker build
+# Multi-stage build for Spring Boot User Service
+FROM eclipse-temurin:21-jdk-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy Maven wrapper and pom.xml first for better caching
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# Make mvnw executable
+RUN chmod +x ./mvnw
+
+# Download dependencies and plugins (this layer will be cached if pom.xml doesn't change)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    ./mvnw dependency:go-offline -B
+
+# Copy source code and configuration files
+COPY src src
+COPY checkstyle.xml .
+COPY dependency-check-suppressions.xml .
+
+# Build the application with Maven cache (skip tests for faster builds)
+RUN --mount=type=cache,target=/root/.m2/repository \
+    ./mvnw clean package -DskipTests
+
+# Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
 # Create app user for security
@@ -9,9 +35,8 @@ RUN addgroup -g 1001 -S appgroup && \
 # Set working directory
 WORKDIR /app
 
-# Copy the pre-built JAR file from target directory
-# This JAR is built by the CI/CD pipeline before docker build
-COPY target/*.jar app.jar
+# Copy the JAR file from builder stage
+COPY --from=builder /app/target/*.jar app.jar
 
 # Change ownership to app user
 RUN chown -R appuser:appgroup /app
