@@ -1,0 +1,14 @@
+target/
+!target/*.jar
+.mvn/wrapper/maven-wrapper.jar
+.idea/
+.vscode/
+*.iml
+.env
+*.log
+.git/
+*.md
+.github/
+Dockerfile
+docker-compose*.yml
+src/test/

@@ -1,0 +1,98 @@
+services:
+  # PostgreSQL Database for User Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: yushan-user-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-yushan_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      POSTGRES_DB: ${DB_NAME:-yushan_user}
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yushan-platform-network
+
+  # Redis Cache for User Service
+  redis:
+    image: redis:7-alpine
+    container_name: yushan-user-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - user_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yushan-platform-network
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yushan-user-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      # Database Configuration
+      DB_USERNAME: ${DB_USERNAME:-yushan_user}
+      DB_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
+      DB_NAME: ${DB_NAME:-yushan_user}
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+
+      # Eureka Configuration
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://yushan-eureka-registry:8761/eureka/
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-YushanUserServiceJWTSecretKey2024ForSecureTokenGeneration}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
+
+      # Server Configuration
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    networks:
+      - yushan-platform-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  user_pg_data:
+    driver: local
+  user_redis_data:
+    driver: local
+
+# Connect to the existing Eureka network
+networks:
+  yushan-platform-network:
+    external: true
