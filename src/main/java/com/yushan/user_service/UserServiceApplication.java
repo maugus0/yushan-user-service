@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableDiscoveryClient    // Register with Eureka
 @EnableFeignClients       // Enable Feign clients for inter-service calls
 @EnableCaching            // Enable caching
-@EnableScheduling         // Enable scheduled tasks (for ranking calculations)
 public class UserServiceApplication {
 
 	public static void main(String[] args) {

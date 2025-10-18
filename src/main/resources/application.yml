@@ -2,45 +2,27 @@ spring:
   application:
     name: user-service
 
-  # PostgreSQL Configuration (disabled for initial setup)
+  # PostgreSQL Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/yushan_user
-    username: yushan_user
-    password: change_me_in_production
+    url: jdbc:postgresql://localhost:5432/postgres?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5
       connection-timeout: 20000
 
-  # JPA/Hibernate Configuration - Disabled (using MyBatis only)
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false
-
-  # Flyway Configuration
+  # DISABLE Flyway temporarily
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
-    validate-on-migrate: true
+    enabled: false
 
-  # MyBatis Configuration
-  mybatis:
-    mapper-locations: classpath:/mapper/**Mapper.xml
-    type-aliases-package: com.yushan.user_service.entity
-    config-location: classpath:config/mybatis-config.xml
-
-  # Redis Configuration (disabled for initial setup)
+  # Redis Configuration
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
       timeout: 2000ms
       lettuce:
         pool:
@@ -63,6 +45,24 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    username: ${MAIL_USERNAME:1784304095@qq.com}
+    password: ${MAIL_PASSWORD:fmgjizhjdbbabiib}
+    port: ${MAIL_PORT:465}
+    default-encoding: UTF-8
+    protocol: smtps
+    properties:
+      "mail.smtp.connectiontimeout": 5000
+      "mail.smtp.timeout": 3000
+      "mail.smtp.writetimeout": 5000
+      "mail.smtp.auth": true
+      "mail.smtp.starttls.enable": true
+      "mail.smtp.starttls.required": true
+  devtools:
+    restart:
+      enabled: false
+
 # Server Configuration
 server:
   port: 8081
@@ -74,8 +74,9 @@ server:
 # Eureka Client Configuration
 eureka:
   client:
-    serviceUrl:
-      defaultZone: http://localhost:8761/eureka/
+    enabled: true
+#    serviceUrl:
+#      defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
 
@@ -100,6 +101,21 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+
+mybatis:
+  mapper-locations: classpath:/mapper/**Mapper.xml
+  type-aliases-package: com.yushan.user_service.entity
+  config-location: classpath:config/mybatis-config.xml
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:YushanBackendJWTSecretKey2025ForSecureTokenGenerationAndValidation}
+  access-token:
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}  # 15 minutes in milliseconds
+  refresh-token:
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}  # 7 days in milliseconds
+  issuer: ${JWT_ISSUER:yushan-backend}
+  algorithm: ${JWT_ALGORITHM:HS256}
 
 # Logging Configuration
 logging:
