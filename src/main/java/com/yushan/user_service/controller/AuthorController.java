@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/author")
+@RequestMapping("/api/v1/author")
 @CrossOrigin(origins = "*")
 public class AuthorController {
 

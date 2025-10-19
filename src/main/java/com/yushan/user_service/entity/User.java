@@ -14,8 +14,6 @@ public class User implements Serializable {
 
     private String hashPassword;
 
-    private Boolean emailVerified;
-
     private String avatarUrl;
 
     private String profileDetail;
@@ -30,16 +28,6 @@ public class User implements Serializable {
 
     private Boolean isAdmin;
 
-    private Integer level;
-
-    private Float exp;
-
-    private Float yuan;
-
-    private Float readTime;
-
-    private Integer readBookNum;
-
     private Date createTime;
 
     private Date updateTime;
@@ -48,12 +36,11 @@ public class User implements Serializable {
 
     private Date lastActive;
 
-    public User(UUID uuid, String email, String username, String hashPassword, Boolean emailVerified, String avatarUrl, String profileDetail, Date birthday, Integer gender, Integer status, Boolean isAuthor, Boolean isAdmin, Integer level, Float exp, Float yuan, Float readTime, Integer readBookNum, Date createTime, Date updateTime, Date lastLogin, Date lastActive) {
+    public User(UUID uuid, String email, String username, String hashPassword, String avatarUrl, String profileDetail, Date birthday, Integer gender, Integer status, Boolean isAuthor, Boolean isAdmin, Date createTime, Date updateTime, Date lastLogin, Date lastActive) {
         this.uuid = uuid;
         this.email = email;
         this.username = username;
         this.hashPassword = hashPassword;
-        this.emailVerified = emailVerified;
         this.avatarUrl = avatarUrl;
         this.profileDetail = profileDetail;
         this.birthday = birthday != null ? new Date(birthday.getTime()) : null;
@@ -61,11 +48,6 @@ public class User implements Serializable {
         this.status = status;
         this.isAuthor = isAuthor;
         this.isAdmin = isAdmin;
-        this.level = level;
-        this.exp = exp;
-        this.yuan = yuan;
-        this.readTime = readTime;
-        this.readBookNum = readBookNum;
         this.createTime = createTime != null ? new Date(createTime.getTime()) : null;
         this.updateTime = updateTime != null ? new Date(updateTime.getTime()) : null;
         this.lastLogin = lastLogin != null ? new Date(lastLogin.getTime()) : null;
@@ -106,14 +88,6 @@ public class User implements Serializable {
 
     public void setHashPassword(String hashPassword) {
         this.hashPassword = hashPassword == null ? null : hashPassword.trim();
-    }
-
-    public Boolean getEmailVerified() {
-        return emailVerified;
-    }
-
-    public void setEmailVerified(Boolean emailVerified) {
-        this.emailVerified = emailVerified;
     }
 
     public String getAvatarUrl() {
@@ -170,46 +144,6 @@ public class User implements Serializable {
 
     public void setIsAdmin(Boolean isAdmin) {
         this.isAdmin = isAdmin;
-    }
-
-    public Integer getLevel() {
-        return level;
-    }
-
-    public void setLevel(Integer level) {
-        this.level = level;
-    }
-
-    public Float getExp() {
-        return exp;
-    }
-
-    public void setExp(Float exp) {
-        this.exp = exp;
-    }
-
-    public Float getYuan() {
-        return yuan;
-    }
-
-    public void setYuan(Float yuan) {
-        this.yuan = yuan;
-    }
-
-    public Float getReadTime() {
-        return readTime;
-    }
-
-    public void setReadTime(Float readTime) {
-        this.readTime = readTime;
-    }
-
-    public Integer getReadBookNum() {
-        return readBookNum;
-    }
-
-    public void setReadBookNum(Integer readBookNum) {
-        this.readBookNum = readBookNum;
     }
 
     public Date getCreateTime() {

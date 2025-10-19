@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "*")
 @Validated
 public class AuthController {
@@ -30,13 +30,6 @@ public class AuthController {
     @Autowired
     private UserMapper userMapper;
 
-
-    @GetMapping("/test")
-    public String test() {
-        log.info("test");
-        return "test";
-    }
-
     /**
      * verifyEmail & Register a new user
      * @param registrationDTO
@@ -44,7 +37,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<UserRegistrationResponseDTO> register(@Valid @RequestBody UserRegistrationRequestDTO registrationDTO) {
+    public ApiResponse<UserAuthResponseDTO> register(@Valid @RequestBody UserRegistrationRequestDTO registrationDTO) {
         // no need to check if email exists here since we check it in register()
         boolean isValid = mailService.verifyEmail(registrationDTO.getEmail(), registrationDTO.getCode());
 
@@ -53,7 +46,7 @@ public class AuthController {
         }
 
         // Prepare user info & token (without sensitive data)
-        UserRegistrationResponseDTO responseDTO = authService.registerAndCreateResponse(registrationDTO);
+        UserAuthResponseDTO responseDTO = authService.registerAndCreateResponse(registrationDTO);
 
         return ApiResponse.success("User registered successfully", responseDTO);
     }
@@ -64,10 +57,10 @@ public class AuthController {
      * @return
      */
     @PostMapping("/login")
-    public ApiResponse<UserRegistrationResponseDTO> login(@Valid @RequestBody UserLoginRequestDTO loginRequest) {
+    public ApiResponse<UserAuthResponseDTO> login(@Valid @RequestBody UserLoginRequestDTO loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        UserRegistrationResponseDTO responseDTO = authService.loginAndCreateResponse(email, password);
+        UserAuthResponseDTO responseDTO = authService.loginAndCreateResponse(email, password);
         return ApiResponse.success("Login successful", responseDTO);
     }
 
@@ -89,10 +82,10 @@ public class AuthController {
      * @return
      */
     @PostMapping("/refresh")
-    public ApiResponse<UserRegistrationResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO refreshRequest) {
+    public ApiResponse<UserAuthResponseDTO> refresh(@Valid @RequestBody RefreshRequestDTO refreshRequest) {
         String refreshToken = refreshRequest.getRefreshToken();
 
-        UserRegistrationResponseDTO responseDTO = authService.refreshToken(refreshToken);
+        UserAuthResponseDTO responseDTO = authService.refreshToken(refreshToken);
         return ApiResponse.success("Token refreshed successfully", responseDTO);
     }
 

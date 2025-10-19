@@ -3,11 +3,14 @@ package com.yushan.user_service.service;
 import com.yushan.user_service.dao.LibraryMapper;
 import com.yushan.user_service.dao.UserMapper;
 import com.yushan.user_service.dto.UserRegistrationRequestDTO;
-import com.yushan.user_service.dto.UserRegistrationResponseDTO;
+import com.yushan.user_service.dto.UserAuthResponseDTO;
 import com.yushan.user_service.entity.Library;
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.Gender;
 import com.yushan.user_service.enums.UserStatus;
+import com.yushan.user_service.event.UserEventProducer;
+import com.yushan.user_service.event.dto.UserLoggedInEvent;
+import com.yushan.user_service.event.dto.UserRegisteredEvent;
 import com.yushan.user_service.exception.ValidationException;
 import com.yushan.user_service.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +19,6 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
@@ -32,13 +34,11 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
-//    @Autowired
-//    private EXPService expService;
+    @Autowired
+    private UserEventProducer userEventProducer;
 
     @Value("${jwt.access-token.expiration}")
     private long accessTokenExpiration;
-
-    private static final Float DAILY_LOGIN_EXP = 5f;
 
     /**
      * register a new user
@@ -57,7 +57,6 @@ public class AuthService {
         user.setEmail(registrationDTO.getEmail());
         user.setUsername(registrationDTO.getUsername());
         user.setHashPassword(hashPassword(registrationDTO.getPassword()));
-        user.setEmailVerified(true);
 
         Gender gender = registrationDTO.getGender();
         user.setGender(gender.getCode());
@@ -69,20 +68,16 @@ public class AuthService {
             user.setBirthday(null);
         }
 
-        user.setCreateTime(new Date());
-        user.setUpdateTime(new Date());
-        user.setLastLogin(new Date());
-        user.setLastActive(new Date());
+        Date date = new Date();
+        user.setCreateTime(date);
+        user.setUpdateTime(date);
+        user.setLastLogin(date);
+        user.setLastActive(date);
 
         // set default user profile
         user.setStatus(UserStatus.NORMAL.getCode());
         user.setIsAuthor(false);
         user.setIsAdmin(false);
-        user.setLevel(1);
-        user.setExp(0f);
-        user.setYuan(2f);
-        user.setReadTime(0f);
-        user.setReadBookNum(0);
 
         userMapper.insert(user);
 
@@ -101,15 +96,26 @@ public class AuthService {
      * @return
      */
     @Transactional(rollbackFor = Exception.class)
-    public UserRegistrationResponseDTO registerAndCreateResponse(UserRegistrationRequestDTO registrationDTO) {
+    public UserAuthResponseDTO registerAndCreateResponse(UserRegistrationRequestDTO registrationDTO) {
 
         User user = register(registrationDTO);
+
+        UserRegisteredEvent event = new UserRegisteredEvent(
+                user.getUuid(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreateTime(),
+                user.getUpdateTime(),
+                user.getLastLogin(),
+                user.getLastActive()
+        );
+        userEventProducer.sendUserRegisteredEvent(event);
 
         // Generate JWT tokens for auto-login after registration
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        UserRegistrationResponseDTO responseDTO = createUserResponse(user);
+        UserAuthResponseDTO responseDTO = createUserResponse(user);
         responseDTO.setAccessToken(accessToken);
         responseDTO.setRefreshToken(refreshToken);
         responseDTO.setTokenType("Bearer");
@@ -147,49 +153,34 @@ public class AuthService {
      * @param password
      * @return
      */
-    public UserRegistrationResponseDTO loginAndCreateResponse(String email, String password) {
+    public UserAuthResponseDTO loginAndCreateResponse(String email, String password) {
         User user = login(email, password);
 
         // Generate JWT tokens
         String accessToken = jwtUtil.generateAccessToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 
-        // get last login time
-        Date lastLogin = user.getLastLogin();
-
-        // check if the first login in the day
-        boolean isFirstLoginToday = false;
-        if (lastLogin != null) {
-            Calendar lastLoginCalendar = Calendar.getInstance();
-            lastLoginCalendar.setTime(lastLogin);
-
-            Calendar todayCalendar = Calendar.getInstance();
-
-            isFirstLoginToday = lastLoginCalendar.get(Calendar.YEAR) != todayCalendar.get(Calendar.YEAR) ||
-                    lastLoginCalendar.get(Calendar.DAY_OF_YEAR) != todayCalendar.get(Calendar.DAY_OF_YEAR);
-        } else {
-            isFirstLoginToday = true;
-        }
-
-        if(isFirstLoginToday) {
-            // add exp & yuan
-            Float newExp = user.getExp() + DAILY_LOGIN_EXP;
-            user.setExp(newExp);
-//            user.setLevel(expService.checkLevel(newExp));
-            user.setYuan(user.getYuan() + user.getLevel());
-        }
+        UserLoggedInEvent event = new UserLoggedInEvent(
+                user.getUuid(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getCreateTime(),
+                user.getUpdateTime(),
+                user.getLastLogin(),
+                user.getLastActive()
+        );
+        userEventProducer.sendUserLoggedInEvent(event);
 
         Date now = new Date();
         user.setLastLogin(now);
         user.setLastActive(now);
 
         // Prepare user info (without sensitive data)
-        UserRegistrationResponseDTO responseDTO = createUserResponse(user);
+        UserAuthResponseDTO responseDTO = createUserResponse(user);
         responseDTO.setAccessToken(accessToken);
         responseDTO.setRefreshToken(refreshToken);
         responseDTO.setTokenType("Bearer");
         responseDTO.setExpiresIn(accessTokenExpiration);
-        responseDTO.setFirstLoginToday(isFirstLoginToday);
 
         userMapper.updateByPrimaryKeySelective(user);
         return responseDTO;
@@ -200,7 +191,7 @@ public class AuthService {
      * @param refreshToken
      * @return
      */
-    public UserRegistrationResponseDTO refreshToken(String refreshToken) {
+    public UserAuthResponseDTO refreshToken(String refreshToken) {
         // Validate refresh token
         if (!jwtUtil.validateToken(refreshToken)) {
             throw new ValidationException("Invalid refresh token");
@@ -228,7 +219,7 @@ public class AuthService {
         // Optionally generate new refresh token (token rotation)
         String newRefreshToken = jwtUtil.generateRefreshToken(user);
 
-        UserRegistrationResponseDTO responseDTO = createUserResponse(user);
+        UserAuthResponseDTO responseDTO = createUserResponse(user);
         responseDTO.setAccessToken(newAccessToken);
         responseDTO.setRefreshToken(newRefreshToken);
         responseDTO.setTokenType("Bearer");
@@ -250,9 +241,9 @@ public class AuthService {
      * @param user
      * @return
      */
-    private UserRegistrationResponseDTO createUserResponse(User user) {
-        UserRegistrationResponseDTO dto = new UserRegistrationResponseDTO();
-        dto.setUuid(user.getUuid() != null ? user.getUuid().toString() : null);
+    private UserAuthResponseDTO createUserResponse(User user) {
+        UserAuthResponseDTO dto = new UserAuthResponseDTO();
+        dto.setUuid(user.getUuid().toString());
         dto.setEmail(user.getEmail());
         dto.setUsername(user.getUsername());
         dto.setAvatarUrl(user.getAvatarUrl());
@@ -262,14 +253,10 @@ public class AuthService {
         dto.setStatus(UserStatus.fromCode(user.getStatus()));
         dto.setIsAuthor(user.getIsAuthor());
         dto.setIsAdmin(user.getIsAdmin());
-        dto.setLevel(user.getLevel());
-        dto.setExp(user.getExp());
-        dto.setYuan(user.getYuan());
-        dto.setReadTime(user.getReadTime());
-        dto.setReadBookNum(user.getReadBookNum());
         dto.setCreateTime(user.getCreateTime());
         dto.setUpdateTime(user.getUpdateTime());
         dto.setLastActive(user.getLastActive());
+        dto.setLastLogin(user.getLastLogin());
         return dto;
     }
 }

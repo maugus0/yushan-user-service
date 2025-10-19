@@ -7,7 +7,6 @@
       <arg column="email" javaType="java.lang.String" jdbcType="VARCHAR" />
       <arg column="username" javaType="java.lang.String" jdbcType="VARCHAR" />
       <arg column="hash_password" javaType="java.lang.String" jdbcType="VARCHAR" />
-      <arg column="email_verified" javaType="java.lang.Boolean" jdbcType="BIT" />
       <arg column="avatar_url" javaType="java.lang.String" jdbcType="VARCHAR" />
       <arg column="profile_detail" javaType="java.lang.String" jdbcType="VARCHAR" />
       <arg column="birthday" javaType="java.util.Date" jdbcType="DATE" />
@@ -15,11 +14,6 @@
       <arg column="status" javaType="java.lang.Integer" jdbcType="INTEGER" />
       <arg column="is_author" javaType="java.lang.Boolean" jdbcType="BIT" />
       <arg column="is_admin" javaType="java.lang.Boolean" jdbcType="BIT" />
-      <arg column="level" javaType="java.lang.Integer" jdbcType="INTEGER" />
-      <arg column="exp" javaType="java.lang.Float" jdbcType="REAL" />
-      <arg column="yuan" javaType="java.lang.Float" jdbcType="REAL" />
-      <arg column="read_time" javaType="java.lang.Float" jdbcType="REAL" />
-      <arg column="read_book_num" javaType="java.lang.Integer" jdbcType="INTEGER" />
       <arg column="create_time" javaType="java.util.Date" jdbcType="TIMESTAMP" />
       <arg column="update_time" javaType="java.util.Date" jdbcType="TIMESTAMP" />
       <arg column="last_login" javaType="java.util.Date" jdbcType="TIMESTAMP" />
@@ -27,9 +21,9 @@
     </constructor>
   </resultMap>
   <sql id="Base_Column_List">
-    uuid, email, username, hash_password, email_verified, avatar_url, profile_detail, 
-    birthday, gender, status, is_author, is_admin, level, exp, yuan, read_time, 
-    read_book_num, create_time, update_time, last_login, last_active
+    uuid, email, username, hash_password, avatar_url, profile_detail,
+    birthday, gender, status, is_author, is_admin,
+    create_time, update_time, last_login, last_active
   </sql>
   <select id="selectByPrimaryKey" parameterType="java.util.UUID" resultMap="BaseResultMap">
     select 
@@ -37,33 +31,23 @@
     from users
     where uuid = #{uuid,jdbcType=OTHER}
   </select>
-
-  <select id="selectByEmail" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List" />
-    from users
-    where email = #{email,jdbcType=VARCHAR}
-  </select>
-
   <delete id="deleteByPrimaryKey" parameterType="java.util.UUID">
     delete from users
     where uuid = #{uuid,jdbcType=OTHER}
   </delete>
   <insert id="insert" parameterType="com.yushan.user_service.entity.User">
     insert into users (uuid, email, username,
-      hash_password, email_verified, avatar_url,
+      hash_password, avatar_url,
       profile_detail, birthday, gender,
       status, is_author, is_admin,
-      level, exp, yuan, read_time,
-      read_book_num, create_time, update_time,
+      create_time, update_time,
       last_login, last_active)
     values (#{uuid,jdbcType=OTHER}, #{email,jdbcType=VARCHAR}, #{username,jdbcType=VARCHAR},
-      #{hashPassword,jdbcType=VARCHAR}, #{emailVerified,jdbcType=BIT}, #{avatarUrl,jdbcType=VARCHAR},
+      #{hashPassword,jdbcType=VARCHAR}, #{avatarUrl,jdbcType=VARCHAR},
       #{profileDetail,jdbcType=VARCHAR}, #{birthday,jdbcType=DATE}, #{gender,jdbcType=INTEGER},
       #{status,jdbcType=INTEGER}, #{isAuthor,jdbcType=BIT}, #{isAdmin,jdbcType=BIT},
-      #{level,jdbcType=INTEGER}, #{exp,jdbcType=REAL}, #{yuan,jdbcType=REAL}, #{readTime,jdbcType=REAL},
-      #{readBookNum,jdbcType=INTEGER}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP},
-      #{lastLogin,jdbcType=TIMESTAMP}, #{lastActive,jdbcType=TIMESTAMP})
+      NOW(), NOW(),
+      NOW(), NOW())
   </insert>
   <insert id="insertSelective" parameterType="com.yushan.user_service.entity.User">
     insert into users
@@ -79,9 +63,6 @@
       </if>
       <if test="hashPassword != null">
         hash_password,
-      </if>
-      <if test="emailVerified != null">
-        email_verified,
       </if>
       <if test="avatarUrl != null">
         avatar_url,
@@ -104,33 +85,10 @@
       <if test="isAdmin != null">
         is_admin,
       </if>
-      <if test="level != null">
-        level,
-      </if>
-      <if test="exp != null">
-        exp,
-      </if>
-      <if test="yuan != null">
-        yuan,
-      </if>
-      <if test="readTime != null">
-        read_time,
-      </if>
-      <if test="readBookNum != null">
-        read_book_num,
-      </if>
-      <if test="createTime != null">
         create_time,
-      </if>
-      <if test="updateTime != null">
         update_time,
-      </if>
-      <if test="lastLogin != null">
         last_login,
-      </if>
-      <if test="lastActive != null">
         last_active,
-      </if>
     </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
       <if test="uuid != null">
@@ -144,9 +102,6 @@
       </if>
       <if test="hashPassword != null">
         #{hashPassword,jdbcType=VARCHAR},
-      </if>
-      <if test="emailVerified != null">
-        #{emailVerified,jdbcType=BIT},
       </if>
       <if test="avatarUrl != null">
         #{avatarUrl,jdbcType=VARCHAR},
@@ -169,33 +124,10 @@
       <if test="isAdmin != null">
         #{isAdmin,jdbcType=BIT},
       </if>
-      <if test="level != null">
-        #{level,jdbcType=INTEGER},
-      </if>
-      <if test="exp != null">
-        #{exp,jdbcType=REAL},
-      </if>
-      <if test="yuan != null">
-        #{yuan,jdbcType=REAL},
-      </if>
-      <if test="readTime != null">
-        #{readTime,jdbcType=REAL},
-      </if>
-      <if test="readBookNum != null">
-        #{readBookNum,jdbcType=INTEGER},
-      </if>
-      <if test="createTime != null">
-        #{createTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="updateTime != null">
-        #{updateTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="lastLogin != null">
-        #{lastLogin,jdbcType=TIMESTAMP},
-      </if>
-      <if test="lastActive != null">
-        #{lastActive,jdbcType=TIMESTAMP},
-      </if>
+        NOW(),
+        NOW(),
+        NOW(),
+        NOW(),
     </trim>
   </insert>
   <update id="updateByPrimaryKeySelective" parameterType="com.yushan.user_service.entity.User">
@@ -209,9 +141,6 @@
       </if>
       <if test="hashPassword != null">
         hash_password = #{hashPassword,jdbcType=VARCHAR},
-      </if>
-      <if test="emailVerified != null">
-        email_verified = #{emailVerified,jdbcType=BIT},
       </if>
       <if test="avatarUrl != null">
         avatar_url = #{avatarUrl,jdbcType=VARCHAR},
@@ -234,27 +163,10 @@
       <if test="isAdmin != null">
         is_admin = #{isAdmin,jdbcType=BIT},
       </if>
-      <if test="level != null">
-        level = #{level,jdbcType=INTEGER},
-      </if>
-      <if test="exp != null">
-        exp = #{exp,jdbcType=REAL},
-      </if>
-      <if test="yuan != null">
-        yuan = #{yuan,jdbcType=REAL},
-      </if>
-      <if test="readTime != null">
-        read_time = #{readTime,jdbcType=REAL},
-      </if>
-      <if test="readBookNum != null">
-        read_book_num = #{readBookNum,jdbcType=INTEGER},
-      </if>
       <if test="createTime != null">
         create_time = #{createTime,jdbcType=TIMESTAMP},
       </if>
-      <if test="updateTime != null">
-        update_time = #{updateTime,jdbcType=TIMESTAMP},
-      </if>
+        update_time = NOW(),
       <if test="lastLogin != null">
         last_login = #{lastLogin,jdbcType=TIMESTAMP},
       </if>
@@ -269,7 +181,6 @@
     set email = #{email,jdbcType=VARCHAR},
       username = #{username,jdbcType=VARCHAR},
       hash_password = #{hashPassword,jdbcType=VARCHAR},
-      email_verified = #{emailVerified,jdbcType=BIT},
       avatar_url = #{avatarUrl,jdbcType=VARCHAR},
       profile_detail = #{profileDetail,jdbcType=VARCHAR},
       birthday = #{birthday,jdbcType=DATE},
@@ -277,17 +188,19 @@
       status = #{status,jdbcType=INTEGER},
       is_author = #{isAuthor,jdbcType=BIT},
       is_admin = #{isAdmin,jdbcType=BIT},
-      level = #{level,jdbcType=INTEGER},
-      exp = #{exp,jdbcType=REAL},
-      yuan = #{yuan,jdbcType=REAL},
-      read_time = #{readTime,jdbcType=REAL},
-      read_book_num = #{readBookNum,jdbcType=INTEGER},
       create_time = #{createTime,jdbcType=TIMESTAMP},
-      update_time = #{updateTime,jdbcType=TIMESTAMP},
+      update_time = NOW(),
       last_login = #{lastLogin,jdbcType=TIMESTAMP},
       last_active = #{lastActive,jdbcType=TIMESTAMP}
     where uuid = #{uuid,jdbcType=OTHER}
   </update>
+
+    <select id="selectByEmail" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from users
+        where email = #{email,jdbcType=VARCHAR}
+    </select>
 
     <sql id="AdminUserFilter_Where">
         <where>

@@ -104,23 +104,20 @@ public class UserService {
 
     private UserProfileResponseDTO mapToProfileResponse(User user) {
         UserProfileResponseDTO dto = new UserProfileResponseDTO();
-        dto.setUuid(user.getUuid() != null ? user.getUuid().toString() : null);
+        dto.setUuid(user.getUuid().toString());
         dto.setEmail(user.getEmail());
         dto.setUsername(user.getUsername());
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setProfileDetail(user.getProfileDetail());
         dto.setBirthday(user.getBirthday());
         dto.setGender(Gender.fromCode(user.getGender()));
+        dto.setStatus(UserStatus.fromCode(user.getStatus()));
         dto.setIsAuthor(user.getIsAuthor());
         dto.setIsAdmin(user.getIsAdmin());
-        dto.setLevel(user.getLevel());
-        dto.setExp(user.getExp());
-        dto.setReadTime(user.getReadTime());
-        dto.setReadBookNum(user.getReadBookNum());
         dto.setCreateTime(user.getCreateTime());
         dto.setUpdateTime(user.getUpdateTime());
         dto.setLastActive(user.getLastActive());
-        dto.setStatus(UserStatus.fromCode(user.getStatus()));
+        dto.setLastLogin(user.getLastLogin());
         return dto;
     }
 

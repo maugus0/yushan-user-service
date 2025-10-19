@@ -24,10 +24,6 @@ public class UserProfileResponseDTO {
     private Gender gender;
     private Boolean isAuthor;
     private Boolean isAdmin;
-    private Integer level;
-    private Float exp;
-    private Float readTime;
-    private Integer readBookNum;
 
     private UserStatus status;
 
@@ -39,6 +35,9 @@ public class UserProfileResponseDTO {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
     private Date lastActive;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
+    private Date lastLogin;
 
     public Date getBirthday() {
         return birthday != null ? new Date(birthday.getTime()) : null;
@@ -70,6 +69,14 @@ public class UserProfileResponseDTO {
 
     public void setLastActive(Date lastActive) {
         this.lastActive = lastActive != null ? new Date(lastActive.getTime()) : null;
+    }
+
+    public Date getLastLogin() {
+        return lastLogin != null ? new Date(lastLogin.getTime()) : null;
+    }
+
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin != null ? new Date(lastLogin.getTime()) : null;
     }
 }
 

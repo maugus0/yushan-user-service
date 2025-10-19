@@ -8,7 +8,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-public class UserRegistrationResponseDTO {
+public class UserAuthResponseDTO {
     private String uuid;
     private String email;
     private String username;
@@ -22,11 +22,6 @@ public class UserRegistrationResponseDTO {
     private UserStatus status;
     private Boolean isAuthor;
     private Boolean isAdmin;
-    private Integer level;
-    private Float exp;
-    private Float yuan;
-    private Float readTime;
-    private Integer readBookNum;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
     private Date createTime;
@@ -37,12 +32,13 @@ public class UserRegistrationResponseDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
     private Date lastActive;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX", timezone = "UTC")
+    private Date lastLogin;
+
     private String accessToken;
     private String refreshToken;
     private String tokenType;
     private long expiresIn;
-
-    private boolean isFirstLoginToday;
 
     public Date getBirthday() {
         return birthday != null ? new Date(birthday.getTime()) : null;
@@ -75,4 +71,13 @@ public class UserRegistrationResponseDTO {
     public void setLastActive(Date lastActive) {
         this.lastActive = lastActive != null ? new Date(lastActive.getTime()) : null;
     }
+
+    public Date getLastLogin() {
+        return lastLogin != null ? new Date(lastLogin.getTime()) : null;
+    }
+
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin != null ? new Date(lastLogin.getTime()) : null;
+    }
+
 }

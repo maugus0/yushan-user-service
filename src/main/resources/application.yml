@@ -4,7 +4,7 @@ spring:
 
   # PostgreSQL Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+    url: jdbc:postgresql://localhost:5432/${DB_HOST:postgres}?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -88,6 +88,18 @@ eureka:
     metadata-map:
       version: 1.0.0
       description: User authentication and profile management service
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      content-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
 
 # Actuator Configuration
 management:

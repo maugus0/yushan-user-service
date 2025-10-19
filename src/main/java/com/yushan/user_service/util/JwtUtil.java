@@ -9,10 +9,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -64,6 +61,16 @@ public class JwtUtil {
         claims.put("email", user.getEmail());
         claims.put("tokenType", "access");
         claims.put("jti", UUID.randomUUID().toString()); // Unique token ID
+        claims.put("username", user.getUsername());
+        if (user.getIsAdmin()) {
+            claims.put("role", "ADMIN");
+        } else if (user.getIsAuthor()) {
+            claims.put("role", "AUTHOR");
+        } else {
+            claims.put("role", "USER");
+        }
+
+        claims.put("status", user.getStatus());
         
         return createToken(claims, user.getEmail(), accessTokenExpiration);
     }
