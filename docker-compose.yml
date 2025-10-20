@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database for User Service
-  postgres:
+  user-postgres:
     image: postgres:16-alpine
     container_name: yushan-user-postgres
     restart: unless-stopped
@@ -46,7 +46,7 @@ services:
     container_name: yushan-user-service
     restart: unless-stopped
     depends_on:
-      postgres:
+      user-postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       DB_USERNAME: ${DB_USERNAME:-yushan_user}
       DB_PASSWORD: ${DB_PASSWORD:-change_me_in_production}
       DB_NAME: ${DB_NAME:-yushan_user}
-      DB_HOST: postgres
+      DB_HOST: user-postgres
       DB_PORT: 5432
 
       # Redis Configuration
