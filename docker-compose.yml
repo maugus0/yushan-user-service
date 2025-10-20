@@ -65,6 +65,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
 
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       # Eureka Configuration
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://yushan-eureka-registry:8761/eureka/
 
