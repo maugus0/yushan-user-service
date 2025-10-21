@@ -27,7 +27,7 @@ public class MailService {
     private static final int CODE_EXPIRE_MINUTES = 5;
 
     /**
-     * send vverification email, limit_time 60s
+     * send verification email, limit_time 60s
      * @param email
      */
     public void sendVerificationCode(String email) {

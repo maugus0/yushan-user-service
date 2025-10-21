@@ -54,7 +54,7 @@ spring:
     password: ${MAIL_PASSWORD:fmgjizhjdbbabiib}
     port: ${MAIL_PORT:465}
     default-encoding: UTF-8
-    protocol: smtps
+    protocol: smtp
     properties:
       "mail.smtp.connectiontimeout": 5000
       "mail.smtp.timeout": 3000
@@ -124,13 +124,13 @@ mybatis:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:YushanBackendJWTSecretKey2025ForSecureTokenGenerationAndValidation}
+  secret: "yushan-content-service-secret-key-for-jwt-token-generation-and-validation-2024"
+  issuer: "yushan-content-service"
+  algorithm: "HS256"
   access-token:
     expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}  # 15 minutes in milliseconds
   refresh-token:
     expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}  # 7 days in milliseconds
-  issuer: ${JWT_ISSUER:yushan-backend}
-  algorithm: ${JWT_ALGORITHM:HS256}
 
 # Logging Configuration
 logging:

@@ -10,7 +10,7 @@ public record UserLoggedInEvent(
         Date createTime,
         Date updateTime,
         Date lastLoginTime,
-        Date lasActiveTime
+        Date lastActiveTime
 ) {
     public UserLoggedInEvent {
         if (createTime != null) {
@@ -22,8 +22,8 @@ public record UserLoggedInEvent(
         if (lastLoginTime != null) {
             lastLoginTime = new Date(lastLoginTime.getTime());
         }
-        if (lasActiveTime != null) {
-            lasActiveTime = new Date(lasActiveTime.getTime());
+        if (lastActiveTime != null) {
+            lastActiveTime = new Date(lastActiveTime.getTime());
         }
     }
 
@@ -40,6 +40,6 @@ public record UserLoggedInEvent(
     }
 
     public Date lasActiveTime() {
-        return lasActiveTime != null ? new Date(lasActiveTime.getTime()) : null;
+        return lastActiveTime != null ? new Date(lastActiveTime.getTime()) : null;
     }
 }

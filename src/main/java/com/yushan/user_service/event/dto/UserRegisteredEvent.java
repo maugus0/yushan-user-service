@@ -10,7 +10,7 @@ public record UserRegisteredEvent(
         Date createTime,
         Date updateTime,
         Date lastLoginTime,
-        Date lasActiveTime
+        Date lastActiveTime
 ) {
     public UserRegisteredEvent {
     if (createTime != null) {
@@ -22,8 +22,8 @@ public record UserRegisteredEvent(
     if (lastLoginTime != null) {
         lastLoginTime = new Date(lastLoginTime.getTime());
     }
-    if (lasActiveTime != null) {
-        lasActiveTime = new Date(lasActiveTime.getTime());
+    if (lastActiveTime != null) {
+        lastActiveTime = new Date(lastActiveTime.getTime());
     }
 }
 
@@ -39,7 +39,7 @@ public record UserRegisteredEvent(
         return lastLoginTime != null ? new Date(lastLoginTime.getTime()) : null;
     }
 
-    public Date lasActiveTime() {
-        return lasActiveTime != null ? new Date(lasActiveTime.getTime()) : null;
+    public Date lastActiveTime() {
+        return lastActiveTime != null ? new Date(lastActiveTime.getTime()) : null;
     }
 }
