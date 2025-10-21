@@ -7,6 +7,7 @@ import com.yushan.user_service.dto.UserProfileUpdateResponseDTO;
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.Gender;
 import com.yushan.user_service.enums.UserStatus;
+import com.yushan.user_service.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ public class UserService {
     public UserProfileResponseDTO getUserProfile(UUID userId) {
         User user = userMapper.selectByPrimaryKey(userId);
         if (user == null) {
-            return null;
+            throw new ValidationException("User not found");
         }
         return mapToProfileResponse(user);
     }

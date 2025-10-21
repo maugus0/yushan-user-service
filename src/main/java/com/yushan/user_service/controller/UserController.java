@@ -6,7 +6,7 @@ import com.yushan.user_service.entity.User;
 import com.yushan.user_service.exception.ForbiddenException;
 import com.yushan.user_service.exception.UnauthorizedException;
 import com.yushan.user_service.exception.ValidationException;
-import com.yushan.user_service.security.CustomUserDetailsService.CustomUserDetails;
+import com.yushan.user_service.security.CustomUserDetailsService;
 import com.yushan.user_service.service.UserService;
 import com.yushan.user_service.util.JwtUtil;
 import jakarta.validation.Valid;
@@ -37,35 +37,10 @@ public class UserController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<UserProfileResponseDTO> getCurrentUserProfile(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedException("Authentication required");
-        }
-
-        UUID userId = null;
-
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof CustomUserDetails) {
-            String id = ((CustomUserDetails) principal).getUserId();
-            if (id != null) {
-                userId = UUID.fromString(id);
-            } else {
-                // Fallback: resolve by email if needed
-                String email = ((CustomUserDetails) principal).getUsername();
-                User byEmail = userMapper.selectByEmail(email);
-                if (byEmail != null) {
-                    userId = byEmail.getUuid();
-                }
-            }
-        }
-
-        if (userId == null) {
-            throw new ValidationException("User ID not found");
-        }
+        //get user id from authentication
+        UUID userId = getCurrentUserId(authentication);
 
         UserProfileResponseDTO dto = userService.getUserProfile(userId);
-        if (dto == null) {
-            throw new ValidationException("User not found");
-        }
         return ApiResponse.success("User profile retrieved successfully", dto);
     }
 
@@ -73,24 +48,17 @@ public class UserController {
      * Update current user's editable profile fields
      */
     @PutMapping("/{id}/profile")
-    @PreAuthorize("isOwner(#id.toString())")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<UserProfileUpdateResponseDTO> updateProfile(
             @PathVariable("id") UUID id,
             @Valid @RequestBody UserProfileUpdateRequestDTO body,
             Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UnauthorizedException("Authentication required");
-        }
 
-        // Ownership check: only the owner can update their profile (admin bypass can be added later)
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof CustomUserDetails) {
-            String currentId = ((CustomUserDetails) principal).getUserId();
-            if (currentId == null || !id.toString().equals(currentId)) {
-                throw new ForbiddenException("Access denied");
-            }
-        } else {
-            throw new UnauthorizedException("Authentication required");
+        //get user id from authentication
+        UUID userId = getCurrentUserId(authentication);
+
+        if (!userId.equals(id)) {
+            throw new ForbiddenException("Access denied");
         }
 
         try {
@@ -167,5 +135,25 @@ public class UserController {
             throw new ValidationException("User not found");
         }
         return ApiResponse.success("User profile retrieved successfully", dto);
+    }
+
+    /**
+     * get current user id from authentication
+     */
+    protected UUID getCurrentUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetailsService.CustomUserDetails) {
+            String id = ((CustomUserDetailsService.CustomUserDetails) principal).getUserId();
+            if (id != null) {
+                return UUID.fromString(id);
+            } else {
+                throw new ValidationException("User ID not found");
+            }
+        }
+        throw new UnauthorizedException("Invalid authentication");
     }
 }
