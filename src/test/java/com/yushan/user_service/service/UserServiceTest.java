@@ -5,6 +5,7 @@ import com.yushan.user_service.dto.UserProfileUpdateRequestDTO;
 import com.yushan.user_service.dto.UserProfileUpdateResponseDTO;
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.Gender;
+import com.yushan.user_service.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -47,7 +48,7 @@ public class UserServiceTest {
         UUID id = UUID.randomUUID();
         when(userMapper.selectByPrimaryKey(id)).thenReturn(null);
 
-        assertNull(userService.getUserProfile(id));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getUserProfile(id));
         verify(userMapper).selectByPrimaryKey(id);
     }
 
