@@ -5,5 +5,6 @@ public record NovelInfoDTO(
         String novelTitle,
         String novelAuthor,
         String novelCover,
-        Integer chapterCnt
+        Integer chapterCnt,
+        String status
 ) {}

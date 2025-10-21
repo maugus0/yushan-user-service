@@ -42,22 +42,35 @@
           AND nl.novel_id = #{novelId,jdbcType=INTEGER}
     </select>
 
+    <select id="selectNovelIdsByUserId" resultType="java.lang.Integer">
+        SELECT nl.novel_id
+        FROM novel_library nl
+                 JOIN library l ON nl.library_id = l.id
+        WHERE l.user_id = #{userId,jdbcType=OTHER}
+    </select>
+
     <select id="countByUserId" resultType="long">
         SELECT COUNT(*)
         FROM novel_library nl
-                 JOIN library l ON nl.library_id = l.id
-                 JOIN novel n ON nl.novel_id = n.id
-        WHERE l.user_id = #{userId,jdbcType=OTHER} AND n.status = 2
+        JOIN library l ON nl.library_id = l.id
+        WHERE l.user_id = #{userId,jdbcType=OTHER}
+        AND nl.novel_id IN
+        <foreach item="novelId" collection="novelIds" open="(" separator="," close=")">
+            #{novelId}
+        </foreach>
     </select>
 
     <select id="selectByUserIdWithPagination" resultMap="BaseResultMap">
         SELECT nl.*
         FROM novel_library nl
-                 JOIN library l ON nl.library_id = l.id
-                 JOIN novel n ON nl.novel_id = n.id
-        WHERE l.user_id = #{userId,jdbcType=OTHER} AND n.status = 2
+        JOIN library l ON nl.library_id = l.id
+        WHERE l.user_id = #{userId,jdbcType=OTHER}
+        AND nl.novel_id IN
+        <foreach item="novelId" collection="novelIds" open="(" separator="," close=")">
+            #{novelId}
+        </foreach>
         ORDER BY nl.${sort} ${order}
-            LIMIT #{size,jdbcType=INTEGER} OFFSET #{offset}
+        LIMIT #{size,jdbcType=INTEGER} OFFSET #{offset}
     </select>
 
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">

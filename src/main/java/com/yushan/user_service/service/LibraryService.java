@@ -9,11 +9,13 @@ import com.yushan.user_service.dto.LibraryResponseDTO;
 import com.yushan.user_service.dto.PageResponseDTO;
 import com.yushan.user_service.entity.Library;
 import com.yushan.user_service.entity.NovelLibrary;
+import com.yushan.user_service.enums.NovelStatus;
 import com.yushan.user_service.exception.ResourceNotFoundException;
 import com.yushan.user_service.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -101,16 +103,30 @@ public class LibraryService {
      */
     @Transactional(readOnly = true)
     public PageResponseDTO<LibraryResponseDTO> getUserLibrary(UUID userId, int page, int size, String sort, String order) {
-        int offset = page * size;
-        long totalElements = novelLibraryMapper.countByUserId(userId);
+        // get all novel ids in user's library
+        List<Integer> allNovelIds = novelLibraryMapper.selectNovelIdsByUserId(userId);
+        if (CollectionUtils.isEmpty(allNovelIds)) {
+            return new PageResponseDTO<>(Collections.emptyList(), 0, size, 0);
+        }
 
+        // filter only published novels
+        List<NovelInfoDTO> allNovelInfo = contentServiceClient.getNovelsByIds(allNovelIds).getData();
+        List<Integer> publishedNovelIds = allNovelInfo.stream()
+                .filter(novel -> NovelStatus.PUBLISHED.name().equalsIgnoreCase(novel.status()))
+                .map(NovelInfoDTO::id)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(publishedNovelIds)) {
+            return new PageResponseDTO<>(Collections.emptyList(), 0, size, 0);
+        }
+
+        long totalElements = novelLibraryMapper.countByUserId(userId, publishedNovelIds);
         if (totalElements == 0) {
             return new PageResponseDTO<>(Collections.emptyList(), 0L, page, size);
         }
-
+        int offset = page * size;
         String safeSort = "updateTime".equalsIgnoreCase(sort) ? "update_time" : "create_time";
         String safeOrder = "asc".equalsIgnoreCase(order) ? "ASC" : "DESC";
-        List<NovelLibrary> novelLibraries = novelLibraryMapper.selectByUserIdWithPagination(userId, offset, size, safeSort, safeOrder);
+        List<NovelLibrary> novelLibraries = novelLibraryMapper.selectByUserIdWithPagination(userId, publishedNovelIds, offset, size, safeSort, safeOrder);
 
         if (novelLibraries.isEmpty()) {
             return new PageResponseDTO<>(Collections.emptyList(), totalElements, page, size);
@@ -169,7 +185,8 @@ public class LibraryService {
         novelLibraryMapper.updateByPrimaryKeySelective(novelLibrary);
 
         NovelInfoDTO novel = contentServiceClient.getNovelById(novelId).getData();
-        ChapterInfoDTO chapter = contentServiceClient.getChapterById(progress).getData();
+        List<ChapterInfoDTO> chapters = contentServiceClient.getChaptersByIds(Collections.singletonList(progress)).getData();
+        ChapterInfoDTO chapter = CollectionUtils.isEmpty(chapters) ? null : chapters.get(0);
 
         return convertToDTO(novelLibrary, novel, chapter);
     }
@@ -189,7 +206,8 @@ public class LibraryService {
         NovelInfoDTO novel = contentServiceClient.getNovelById(novelId).getData();
         ChapterInfoDTO chapter = null;
         if (novelLibrary.getProgress() != null) {
-            chapter = contentServiceClient.getChapterById(novelLibrary.getProgress()).getData();
+            List<ChapterInfoDTO> chapters = contentServiceClient.getChaptersByIds(Collections.singletonList(novelLibrary.getProgress())).getData();
+            chapter = CollectionUtils.isEmpty(chapters) ? null : chapters.get(0);
         }
         return convertToDTO(novelLibrary, novel, chapter);
     }
@@ -245,12 +263,13 @@ public class LibraryService {
             throw new ResourceNotFoundException("novel not found: " + novelId);
         }
         if (progress != null) {
-            ChapterInfoDTO chapter = contentServiceClient.getChapterById(progress).getData();
-            if (chapter == null) {
+            List<ChapterInfoDTO> chapters = contentServiceClient.getChaptersByIds(Collections.singletonList(progress)).getData();
+            if (CollectionUtils.isEmpty(chapters)) {
                 throw new ResourceNotFoundException("Chapter not found with id: " + progress);
             }
+            ChapterInfoDTO chapter = chapters.get(0);
             if (!chapter.novelId().equals(novelId)) {
-                throw new ValidationException("Chapter don't belong with novel id: " + novelId);
+                throw new ValidationException("Chapter doesn't belong to novel id: " + novelId);
             }
         }
     }

@@ -31,10 +31,6 @@ public interface ContentServiceClient {
     @CircuitBreaker(name = "content-service")
     ApiResponse<NovelInfoDTO> getNovelById(@RequestParam("novelId") Integer novelId);
 
-    @GetMapping("/api/v1/chapters/{chapterId}")
-    @CircuitBreaker(name = "content-service")
-    ApiResponse<ChapterInfoDTO> getChapterById(@RequestParam("chapterId") Integer chapterId);
-
     /**
      * Fallback class for ContentServiceClient.
      * This class will be instantiated if the content-service is down or responses with an error.
@@ -60,13 +56,6 @@ public interface ContentServiceClient {
         @Override
         public ApiResponse<NovelInfoDTO> getNovelById(@RequestParam("novelId") Integer novelId) {
             logger.error("Circuit breaker opened for content-service. Falling back for getNovelById request with {} id.", novelId);
-            // return an empty list as a fallback
-            return ApiResponse.success(null);
-        }
-
-        @Override
-        public ApiResponse<ChapterInfoDTO> getChapterById(@RequestParam("chapterId") Integer chapterId) {
-            logger.error("Circuit breaker opened for content-service. Falling back for getChapterById request with {} id.", chapterId);
             // return an empty list as a fallback
             return ApiResponse.success(null);
         }

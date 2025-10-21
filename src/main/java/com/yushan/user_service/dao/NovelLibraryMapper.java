@@ -23,14 +23,17 @@ public interface NovelLibraryMapper {
 
     int updateByPrimaryKey(NovelLibrary record);
 
-    // Pagination methods
+    // get library methods
+    List<Integer> selectNovelIdsByUserId(UUID userId);
+
     List<NovelLibrary> selectByUserIdWithPagination(@Param("userId") UUID userId,
+                                                    @Param("novelIds") List<Integer> novelIds,
                                                     @Param("offset") int offset,
                                                     @Param("size") int size,
                                                     @Param("sort") String sort,
                                                     @Param("order") String order);
 
-    long countByUserId(@Param("userId") UUID userId);
+    long countByUserId(@Param("userId") UUID userId, @Param("novelIds") List<Integer> novelIds);
 
     int deleteByUserIdAndNovelIds(@Param("userId") UUID userId, @Param("novelIds") List<Integer> novelIds);
 
