@@ -49,7 +49,7 @@ public class AuthService {
     public User register(UserRegistrationRequestDTO registrationDTO) {
         // check if email existed
         if (userMapper.selectByEmail(registrationDTO.getEmail()) != null) {
-            throw new RuntimeException("email was registered");
+            throw new ValidationException("Email was registered");
         }
 
         User user = new User();
