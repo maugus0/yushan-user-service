@@ -1,0 +1,38 @@
+-- Test database schema for H2
+-- This file is automatically executed by Spring Boot Test
+
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    uuid VARCHAR(36) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(100) NOT NULL,
+    hash_password VARCHAR(255) NOT NULL,
+    avatar_url TEXT NOT NULL,
+    profile_detail TEXT,
+    birthday DATE,
+    gender INTEGER NOT NULL,
+    status INTEGER NOT NULL DEFAULT 0,
+    is_author BOOLEAN NOT NULL DEFAULT FALSE,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_active TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS library (
+    id SERIAL PRIMARY KEY,
+    uuid UUID NOT NULL DEFAULT RANDOM_UUID(),
+    user_id UUID NOT NULL,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS novel_library (
+    id SERIAL PRIMARY KEY,
+    library_id INTEGER NOT NULL,
+    novel_id INTEGER NOT NULL,
+    progress INTEGER,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

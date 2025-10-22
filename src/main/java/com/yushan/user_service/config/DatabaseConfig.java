@@ -22,9 +22,9 @@ public class DatabaseConfig {
     public SqlSessionFactory sqlSessionFactory() throws Exception {
         SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
-        // factoryBean.setMapperLocations(
-        //     new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/**Mapper.xml")
-        // );
+         factoryBean.setMapperLocations(
+             new PathMatchingResourcePatternResolver().getResources("classpath:/mapper/**Mapper.xml")
+         );
         factoryBean.setTypeAliasesPackage("com.yushan.user_service.entity");
         factoryBean.setConfigLocation(
             new PathMatchingResourcePatternResolver().getResource("classpath:config/mybatis-config.xml")
