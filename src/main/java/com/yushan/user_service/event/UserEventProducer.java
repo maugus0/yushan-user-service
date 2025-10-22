@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class UserEventProducer {
 
     private static final String TOPIC = "user.events";
-    @Autowired private KafkaTemplate<String, String> kafkaTemplate;
+    @Autowired private KafkaTemplate<String, Object> kafkaTemplate;
     @Autowired private ObjectMapper objectMapper;
 
     public void sendUserRegisteredEvent(UserRegisteredEvent event) {
@@ -30,10 +30,9 @@ public class UserEventProducer {
         try {
             JsonNode payloadJson = objectMapper.valueToTree(payload);
             EventEnvelope envelope = new EventEnvelope(eventType, payloadJson);
-            String message = objectMapper.writeValueAsString(envelope);
 
             log.info("Sending event in envelope [type={}] to topic {}", eventType, TOPIC);
-            kafkaTemplate.send(TOPIC, message);
+            kafkaTemplate.send(TOPIC, envelope);
         } catch (Exception e) {
             log.error("Error sending event envelope for type {}", eventType, e);
         }
