@@ -6,6 +6,7 @@ import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.ErrorCode;
 import com.yushan.user_service.service.MailService;
 import com.yushan.user_service.util.JwtUtil;
+import com.yushan.user_service.util.MailUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +53,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureWebMvc
 @ActiveProfiles("test")
 @Transactional
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "jwt.secret=test-secret-key-for-integration-tests-123456",
+        "jwt.access-token.expiration=3600000",
+        "jwt.refresh-token.expiration=86400000"
+})
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class JwtAuthenticationTest {
 
@@ -71,6 +81,9 @@ public class JwtAuthenticationTest {
 
     @MockBean
     private MailService mailService;
+
+    @MockBean
+    private MailUtil mailUtil;
 
     private MockMvc mockMvc;
 

@@ -1,35 +1,34 @@
 package com.yushan.user_service.interceptor;
 
-import com.yushan.user_service.dao.UserMapper;
-import com.yushan.user_service.entity.User;
+import com.yushan.user_service.event.UserActivityEventProducer;
+import com.yushan.user_service.event.dto.UserActivityEvent;
 import com.yushan.user_service.security.CustomUserDetailsService;
-import com.yushan.user_service.util.RedisUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class UserActivityInterceptorTest {
 
     @Mock
-    private UserMapper userMapper;
-
-    @Mock
-    private RedisUtil redisUtil;
+    private UserActivityEventProducer userActivityEventProducer;
 
     @Mock
     private Authentication authentication;
@@ -43,166 +42,116 @@ class UserActivityInterceptorTest {
     @InjectMocks
     private UserActivityInterceptor userActivityInterceptor;
 
-    private UUID testUserId;
     private MockHttpServletRequest mockRequest;
     private MockHttpServletResponse mockResponse;
+    private final UUID testUserId = UUID.randomUUID();
+    private final String requestUri = "/api/v1/users/profile";
+    private final String requestMethod = "GET";
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        testUserId = UUID.randomUUID();
+        mockRequest = new MockHttpServletRequest();
+        mockRequest.setRequestURI(requestUri);
+        mockRequest.setMethod(requestMethod);
+        mockResponse = new MockHttpServletResponse();
 
+        // Mock the SecurityContextHolder to avoid static method issues
         when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
-
-        mockRequest = new MockHttpServletRequest();
-        mockResponse = new MockHttpServletResponse();
     }
 
     @Test
-    void preHandle_shouldReturnTrue() throws Exception {
+    void preHandle_whenUserIsAuthenticated_shouldSendActivityEventAndReturnTrue() throws Exception {
         // Given
-        mockRequest.setRequestURI("/api/test");
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(userDetails.getUserId()).thenReturn(testUserId.toString());
+
+        // When
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
+
+        // Then
+        assertTrue(result, "Interceptor should always return true to not block the request chain.");
+
+        ArgumentCaptor<UserActivityEvent> eventCaptor = ArgumentCaptor.forClass(UserActivityEvent.class);
+        verify(userActivityEventProducer, times(1)).sendUserActivityEvent(eventCaptor.capture());
+
+        UserActivityEvent capturedEvent = eventCaptor.getValue();
+        assertEquals(testUserId, capturedEvent.userId());
+        assertEquals("user-service", capturedEvent.serviceName());
+        assertEquals(requestUri, capturedEvent.endpoint());
+        assertEquals(requestMethod, capturedEvent.method());
+        assertNotNull(capturedEvent.timestamp());
+    }
+
+    @Test
+    void preHandle_whenUserIsNotAuthenticated_shouldNotSendEventAndReturnTrue() throws Exception {
+        // Given
         when(authentication.isAuthenticated()).thenReturn(false);
 
         // When
-        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
 
         // Then
         assertTrue(result);
+        verifyNoInteractions(userActivityEventProducer);
     }
 
     @Test
-    void preHandle_whenNotAuthenticated_shouldNotUpdateUserActivity() throws Exception {
+    void preHandle_whenPrincipalIsAnonymousString_shouldNotSendEventAndReturnTrue() throws Exception {
         // Given
-        mockRequest.setRequestURI("/api/test");
-        when(authentication.isAuthenticated()).thenReturn(false);
-
-        // When
-        userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
-
-        // Then
-        verifyNoInteractions(userMapper);
-        verifyNoInteractions(redisUtil);
-    }
-
-    @Test
-    void preHandle_whenAnonymousUser_shouldNotUpdateUserActivity() throws Exception {
-        // Given
-        mockRequest.setRequestURI("/api/test");
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn("anonymousUser");
 
         // When
-        userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
 
         // Then
-        verifyNoInteractions(userMapper);
-        verifyNoInteractions(redisUtil);
+        assertTrue(result);
+        verifyNoInteractions(userActivityEventProducer);
     }
 
     @Test
-    void preHandle_whenValidUserAndShouldUpdate_shouldUpdateUserActivity() throws Exception {
+    void preHandle_whenUserIdIsInvalidFormat_shouldNotSendEventAndReturnTrue() throws Exception {
         // Given
-        mockRequest.setRequestURI("/api/test");
-        mockRequest.setMethod("GET");
-
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(userDetails.getUserId()).thenReturn(testUserId.toString());
-
-        when(redisUtil.hasKey(anyString())).thenReturn(false);
-
-        // When
-        userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
-
-        // Then
-        verify(redisUtil).hasKey("user:activity:" + testUserId.toString());
-        verify(redisUtil).set(eq("user:activity:" + testUserId.toString()), eq("1"), anyLong(), any());
-
-        Thread.sleep(100); // wait for async
-    }
-
-    @Test
-    void preHandle_whenValidUserButWithinInterval_shouldNotUpdateUserActivity() throws Exception {
-        // Given
-        mockRequest.setRequestURI("/api/test");
-        mockRequest.setMethod("GET");
-
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(userDetails.getUserId()).thenReturn(testUserId.toString());
-
-        when(redisUtil.hasKey(anyString())).thenReturn(true);
-
-        // When
-        userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
-
-        // Then
-        verify(redisUtil).hasKey("user:activity:" + testUserId.toString());
-        verifyNoMoreInteractions(redisUtil);
-        verifyNoInteractions(userMapper);
-    }
-
-    @Test
-    void preHandle_whenInvalidUserIdFormat_shouldNotUpdateUserActivity() throws Exception {
-        // Given
-        mockRequest.setRequestURI("/api/test");
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getUserId()).thenReturn("invalid-uuid-format");
 
         // When
-        userActivityInterceptor.preHandle(mockRequest, mockResponse, null);
-
-        // Then
-        verifyNoInteractions(userMapper);
-        verifyNoInteractions(redisUtil);
-    }
-
-    @Test
-    void shouldUpdateBasedOnInterval_whenRedisCheckFails_shouldReturnTrue() throws Exception {
-        // Given
-        when(redisUtil.hasKey(anyString())).thenThrow(new RuntimeException("Redis error"));
-
-        // When
-        boolean result = userActivityInterceptor.shouldUpdateBasedOnInterval(testUserId);
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
 
         // Then
         assertTrue(result);
+        verifyNoInteractions(userActivityEventProducer);
     }
 
     @Test
-    void updateUserLastActiveAsync_shouldUpdateUserLastActiveTime() throws InterruptedException {
+    void preHandle_whenEventProducerThrowsException_shouldCatchExceptionAndReturnTrue() throws Exception {
         // Given
-        when(userMapper.updateByPrimaryKeySelective(any(User.class))).thenReturn(1);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(userDetails.getUserId()).thenReturn(testUserId.toString());
+        doThrow(new RuntimeException("Kafka is down")).when(userActivityEventProducer).sendUserActivityEvent(any(UserActivityEvent.class));
 
         // When
-        userActivityInterceptor.updateUserLastActiveAsync(testUserId);
-
-        Thread.sleep(100);
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
 
         // Then
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userMapper).updateByPrimaryKeySelective(userCaptor.capture());
-
-        User capturedUser = userCaptor.getValue();
-        assert capturedUser.getUuid().equals(testUserId);
-        assert capturedUser.getLastActive() != null;
+        assertTrue(result, "Interceptor must return true even if event sending fails.");
+        verify(userActivityEventProducer, times(1)).sendUserActivityEvent(any(UserActivityEvent.class));
     }
 
     @Test
-    void updateUserLastActiveAsync_whenUpdateFails_shouldLogError() throws InterruptedException {
+    void preHandle_whenAuthenticationIsNull_shouldNotSendEventAndReturnTrue() throws Exception {
         // Given
-        when(userMapper.updateByPrimaryKeySelective(any(User.class)))
-                .thenThrow(new RuntimeException("Database error"));
+        when(securityContext.getAuthentication()).thenReturn(null);
 
         // When
-        userActivityInterceptor.updateUserLastActiveAsync(testUserId);
-
-        Thread.sleep(100);
+        boolean result = userActivityInterceptor.preHandle(mockRequest, mockResponse, new Object());
 
         // Then
-        verify(userMapper).updateByPrimaryKeySelective(any(User.class));
+        assertTrue(result);
+        verifyNoInteractions(userActivityEventProducer);
     }
 }

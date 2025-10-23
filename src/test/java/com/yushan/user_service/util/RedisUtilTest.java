@@ -2,15 +2,18 @@ package com.yushan.user_service.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yushan.user_service.service.MailService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +26,14 @@ import static org.mockito.Mockito.*;
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "jwt.secret=test-secret-key-for-integration-tests-123456",
+        "jwt.access-token.expiration=3600000",
+        "jwt.refresh-token.expiration=86400000"
+})
 public class RedisUtilTest {
 
     private RedisUtil redisUtil;
@@ -35,6 +46,11 @@ public class RedisUtilTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
+
+    @MockBean
+    private MailService mailService;
+    @MockBean
+    private MailUtil mailUtil;
 
     @BeforeEach
     void setUp() {

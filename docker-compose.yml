@@ -53,6 +53,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
 
+      # Config Server Configuration
+      CONFIG_SERVER_URI: http://yushan-config-server:8888
+
       # Database Configuration
       DB_USERNAME: ${DB_USERNAME:-yushan_user}
       DB_PASSWORD: ${DB_PASSWORD:-change_me_in_production}

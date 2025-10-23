@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yushan.user_service.dao.UserMapper;
 import com.yushan.user_service.dto.*;
 import com.yushan.user_service.entity.User;
+import com.yushan.user_service.event.UserActivityEventProducer;
 import com.yushan.user_service.service.AuthService;
 import com.yushan.user_service.service.MailService;
 import com.yushan.user_service.util.JwtUtil;
@@ -56,7 +57,7 @@ public class AuthControllerTest {
     private JwtUtil jwtUtil;
 
     @MockBean
-    private RedisUtil redisUtil;
+    private UserActivityEventProducer userActivityEventProducer;
 
     private UserRegistrationRequestDTO registrationDTO;
     private UserAuthResponseDTO userAuthResponseDTO;

@@ -1,11 +1,15 @@
 package com.yushan.user_service.util;
 
 import com.yushan.user_service.entity.User;
+import com.yushan.user_service.service.MailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Date;
 import java.util.UUID;
@@ -18,11 +22,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * This test class verifies JWT token generation, validation, and claim extraction
  */
 @SpringBootTest
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "jwt.secret=test-secret-key-for-integration-tests-123456",
+        "jwt.access-token.expiration=3600000",
+        "jwt.refresh-token.expiration=86400000"
+})
 @ActiveProfiles("test")
 public class JwtUtilTest {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @MockBean
+    private MailService mailService;
+    @MockBean
+    private MailUtil mailUtil;
 
     private User testUser;
 

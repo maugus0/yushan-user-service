@@ -7,6 +7,7 @@ import com.yushan.user_service.dto.EmailVerificationRequestDTO;
 import com.yushan.user_service.dto.UserProfileResponseDTO;
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.ErrorCode;
+import com.yushan.user_service.event.UserActivityEventProducer;
 import com.yushan.user_service.service.AuthorService;
 import com.yushan.user_service.service.MailService;
 import com.yushan.user_service.service.UserService;
@@ -103,6 +104,9 @@ class AuthorControllerTest {
 
     @MockBean
     private JwtUtil jwtUtil;
+
+    @MockBean
+    private UserActivityEventProducer userActivityEventProducer;
 
     private User testUser;
     private String testEmail;
