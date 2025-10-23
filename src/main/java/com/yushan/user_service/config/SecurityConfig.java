@@ -112,6 +112,7 @@ public class SecurityConfig {
                 // Swagger/OpenAPI endpoints
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/error").permitAll()
+                .requestMatchers("/api/v1/health").permitAll()
                 
                 // CORS preflight requests - allow OPTIONS for all endpoints
                 .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()

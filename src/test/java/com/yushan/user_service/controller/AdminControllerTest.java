@@ -9,6 +9,7 @@ import com.yushan.user_service.service.AdminService;
 import com.yushan.user_service.service.UserService;
 import com.yushan.user_service.util.JwtUtil;
 import com.yushan.user_service.util.RedisUtil;
+import com.yushan.user_service.event.UserActivityEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +57,7 @@ class AdminControllerTest {
     private JwtUtil jwtUtil;
 
     @MockBean
-    private RedisUtil redisUtil;
+    private UserActivityEventProducer userActivityEventProducer;
 
     private AdminPromoteRequestDTO request;
     private UserProfileResponseDTO response;

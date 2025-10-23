@@ -7,6 +7,7 @@ import com.yushan.user_service.dto.UserProfileResponseDTO;
 import com.yushan.user_service.dto.UserProfileUpdateRequestDTO;
 import com.yushan.user_service.dto.UserProfileUpdateResponseDTO;
 import com.yushan.user_service.entity.User;
+import com.yushan.user_service.event.UserActivityEventProducer;
 import com.yushan.user_service.security.CustomUserDetailsService.CustomUserDetails;
 import com.yushan.user_service.security.SecurityExpressionRoot;
 import com.yushan.user_service.service.MailService;
@@ -102,6 +103,9 @@ public class UserControllerTest {
 
     @MockBean
     private RedisUtil redisUtil;
+
+    @MockBean
+    private UserActivityEventProducer userActivityEventProducer;
 
     private SecurityExpressionRoot securityExpressionRoot;
     private User testUser;

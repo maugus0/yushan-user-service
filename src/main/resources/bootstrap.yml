@@ -1,0 +1,32 @@
+# Bootstrap Configuration for User Service
+# This file is loaded before application.yml and connects to Config Server
+
+spring:
+  application:
+    name: user-service
+  
+  cloud:
+    config:
+      # Config Server connection
+      uri: ${CONFIG_SERVER_URI:http://config-server:8888}
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        max-interval: 2000
+        multiplier: 1.1
+      
+      # Profile configuration
+      profile: ${SPRING_PROFILES_ACTIVE:default}
+      label: ${CONFIG_LABEL:main}
+      
+      # Discovery configuration (if Config Server is registered with Eureka)
+      discovery:
+        enabled: true
+        service-id: config-server
+
+# Logging for bootstrap phase
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot.context.config: DEBUG

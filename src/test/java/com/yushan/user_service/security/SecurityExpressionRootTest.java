@@ -2,13 +2,17 @@ package com.yushan.user_service.security;
 
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.security.CustomUserDetailsService.CustomUserDetails;
+import com.yushan.user_service.service.MailService;
+import com.yushan.user_service.util.MailUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,9 +28,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies custom security expressions used in @PreAuthorize annotations
  */
 @SpringBootTest
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "jwt.secret=test-secret-key-for-integration-tests-123456",
+        "jwt.access-token.expiration=3600000",
+        "jwt.refresh-token.expiration=86400000"
+})
 @ActiveProfiles("test")
 public class SecurityExpressionRootTest {
 
+    @MockBean
+    private MailService mailService;
+    @MockBean
+    private MailUtil mailUtil;
     private SecurityExpressionRoot securityExpressionRoot;
     private User regularUser;
     private User authorUser;

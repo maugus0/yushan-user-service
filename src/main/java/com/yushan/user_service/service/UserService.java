@@ -8,12 +8,19 @@ import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.Gender;
 import com.yushan.user_service.enums.UserStatus;
 import com.yushan.user_service.exception.ResourceNotFoundException;
+import com.yushan.user_service.util.RedisUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -22,6 +29,9 @@ public class UserService {
 
     @Autowired
     private MailService mailService;
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * Load a user's profile by UUID and map to response DTO
@@ -145,6 +155,27 @@ public class UserService {
             return null;
         }
         return user.getUsername();
+    }
+
+    @Async
+    public void updateLastActiveTime(UUID userId, LocalDateTime lastActive) {
+        if (userId == null) return;
+
+        String cacheKey = "active" + userId;
+
+        if (redisUtil.hasKey(cacheKey)) {
+            return;
+        }
+
+        User user = userMapper.selectByPrimaryKey(userId);
+        if (user != null && lastActive != null) {
+            user.setLastActive(Date.from(lastActive.atZone(ZoneId.systemDefault()).toInstant()));
+            int result = userMapper.updateByPrimaryKey(user);
+            if (result > 0) {
+                log.info("Successfully updated last active time for user: {}", userId);
+            }
+            redisUtil.set(cacheKey, "1", 5, TimeUnit.MINUTES);
+        }
     }
 
     /**

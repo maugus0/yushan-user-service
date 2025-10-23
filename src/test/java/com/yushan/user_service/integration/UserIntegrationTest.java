@@ -6,15 +6,19 @@ import com.yushan.user_service.dao.UserMapper;
 import com.yushan.user_service.entity.User;
 import com.yushan.user_service.enums.ErrorCode;
 import com.yushan.user_service.enums.Gender;
+import com.yushan.user_service.service.MailService;
 import com.yushan.user_service.util.JwtUtil;
+import com.yushan.user_service.util.MailUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +51,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("integration-test")
 @Import(TestcontainersConfiguration.class)
 @Transactional
+@TestPropertySource(properties = {
+        "spring.kafka.bootstrap-servers=",
+        "spring.kafka.enabled=false",
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "jwt.secret=test-secret-key-for-integration-tests-123456",
+        "jwt.access-token.expiration=3600000",
+        "jwt.refresh-token.expiration=86400000"
+})
 @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "CI", matches = "true")
 public class UserIntegrationTest {
 
@@ -62,9 +74,13 @@ public class UserIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private MailService mailService;
+    @MockBean
+    private MailUtil mailUtil;
 
     private MockMvc mockMvc;
 
