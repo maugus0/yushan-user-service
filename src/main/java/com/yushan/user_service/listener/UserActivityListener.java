@@ -30,7 +30,7 @@ public class UserActivityListener {
             JsonNode timestampNode = jsonNode.get("timestamp");
             if (userIdNode != null && !userIdNode.isNull() && timestampNode != null && !timestampNode.isNull()) {
                 UUID uuid = UUID.fromString(userIdNode.asText());
-                LocalDateTime timestamp = LocalDateTime.parse(timestampNode.asText());
+                LocalDateTime timestamp = objectMapper.treeToValue(timestampNode, LocalDateTime.class);
 
                 userService.updateLastActiveTime(uuid, timestamp);
                 log.info("Successfully updated last active time for user {}", uuid);
