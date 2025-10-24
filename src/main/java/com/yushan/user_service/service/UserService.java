@@ -164,6 +164,7 @@ public class UserService {
         String cacheKey = "active" + userId;
 
         if (redisUtil.hasKey(cacheKey)) {
+            log.info("Skipping update for user {} as it was recently updated", userId);
             return;
         }
 
