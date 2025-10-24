@@ -33,7 +33,7 @@ public class UserActivityListener {
                 LocalDateTime timestamp = objectMapper.treeToValue(timestampNode, LocalDateTime.class);
 
                 userService.updateLastActiveTime(uuid, timestamp);
-                log.info("Successfully updated last active time for user {}", uuid);
+                log.info("Successfully handled last active event for user: {}", uuid);
             } else {
                 log.warn("Received user activity event with missing or null fields. Payload: {}", payload);
             }
