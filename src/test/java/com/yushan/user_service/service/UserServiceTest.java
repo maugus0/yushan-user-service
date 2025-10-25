@@ -1,6 +1,7 @@
 package com.yushan.user_service.service;
 
 import com.yushan.user_service.dao.UserMapper;
+import com.yushan.user_service.dto.UserProfileResponseDTO;
 import com.yushan.user_service.dto.UserProfileUpdateRequestDTO;
 import com.yushan.user_service.dto.UserProfileUpdateResponseDTO;
 import com.yushan.user_service.entity.User;
@@ -12,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -228,6 +230,91 @@ public class UserServiceTest {
         assertEquals("AdminUser", profile.getUsername());
         assertTrue(profile.getIsAuthor());
         assertTrue(profile.getIsAdmin());  // Should be true for admin
+    }
+
+    @Test
+    void getAllUsers_returnsListOfUserProfiles() {
+        // Arrange
+        User user1 = new User();
+        user1.setUuid(UUID.randomUUID());
+        user1.setUsername("user1");
+        user1.setEmail("user1@example.com");
+        user1.setGender(1);
+        user1.setStatus(0);
+
+        User user2 = new User();
+        user2.setUuid(UUID.randomUUID());
+        user2.setUsername("user2");
+        user2.setEmail("user2@example.com");
+        user2.setGender(2);
+        user2.setStatus(0);
+
+        List<User> userList = List.of(user1, user2);
+        when(userMapper.selectAllUsersForRanking()).thenReturn(userList);
+
+        // Act
+        List<UserProfileResponseDTO> result = userService.getAllUsers();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(user1.getUuid().toString(), result.get(0).getUuid());
+        assertEquals(user1.getUsername(), result.get(0).getUsername());
+        assertEquals(user2.getUuid().toString(), result.get(1).getUuid());
+        assertEquals(user2.getUsername(), result.get(1).getUsername());
+
+        verify(userMapper).selectAllUsersForRanking();
+    }
+
+    @Test
+    void getUsersByIds_returnsMatchingUserProfiles() {
+        // Arrange
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        List<UUID> userIds = List.of(id1, id2);
+
+        User user1 = new User();
+        user1.setUuid(id1);
+        user1.setUsername("user1");
+        user1.setEmail("user1@example.com");
+        user1.setGender(1);
+        user1.setStatus(0);
+
+        User user2 = new User();
+        user2.setUuid(id2);
+        user2.setUsername("user2");
+        user2.setEmail("user2@example.com");
+        user2.setGender(2);
+        user2.setStatus(0);
+
+        List<User> userList = List.of(user1, user2);
+        when(userMapper.selectByUuids(userIds)).thenReturn(userList);
+
+        // Act
+        List<UserProfileResponseDTO> result = userService.getUsersByIds(userIds);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(id1.toString(), result.get(0).getUuid());
+        assertEquals(id2.toString(), result.get(1).getUuid());
+
+        verify(userMapper).selectByUuids(userIds);
+    }
+
+    @Test
+    void getUsersByIds_withEmptyList_returnsEmptyList() {
+        // Arrange
+        List<UUID> emptyIdList = List.of();
+        when(userMapper.selectByUuids(emptyIdList)).thenReturn(List.of());
+
+        // Act
+        List<UserProfileResponseDTO> result = userService.getUsersByIds(emptyIdList);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(userMapper).selectByUuids(emptyIdList);
     }
 
     @Test

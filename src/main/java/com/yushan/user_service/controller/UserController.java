@@ -10,16 +10,19 @@ import com.yushan.user_service.security.CustomUserDetailsService;
 import com.yushan.user_service.service.UserService;
 import com.yushan.user_service.util.JwtUtil;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class UserController {
 
     @Autowired
@@ -135,6 +138,20 @@ public class UserController {
             throw new ValidationException("User not found");
         }
         return ApiResponse.success("User profile retrieved successfully", dto);
+    }
+
+    @GetMapping("/all/ranking")
+    public ApiResponse<List<UserProfileResponseDTO>> getAllUsersForRanking() {
+        log.info("Fetching all users for ranking");
+        List<UserProfileResponseDTO> dto = userService.getAllUsers();
+        return ApiResponse.success("User ranking retrieved successfully", dto);
+    }
+
+    @PostMapping("/batch/get")
+    public ApiResponse<List<UserProfileResponseDTO>> getUsersBatch(@RequestBody List<UUID> userIds) {
+        log.info("Fetching user profiles for IDs: {}", userIds);
+        List<UserProfileResponseDTO> dto = userService.getUsersByIds(userIds);
+        return ApiResponse.success("User profiles retrieved successfully", dto);
     }
 
     /**

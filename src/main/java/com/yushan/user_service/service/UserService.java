@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -146,15 +147,14 @@ public class UserService {
         mailService.sendVerificationCode(newEmail);
     }
 
-    /**
-     * Get username by user ID
-     */
-    public String getUsernameById(UUID userId) {
-        User user = userMapper.selectByPrimaryKey(userId);
-        if (user == null) {
-            return null;
-        }
-        return user.getUsername();
+    public List<UserProfileResponseDTO> getAllUsers() {
+        List<User> users = userMapper.selectAllUsersForRanking();
+        return users.stream().map(this::mapToProfileResponse).toList();
+    }
+
+    public List<UserProfileResponseDTO> getUsersByIds(List<UUID> userIds) {
+        List<User> users = userMapper.selectByUuids(userIds);
+        return users.stream().map(this::mapToProfileResponse).toList();
     }
 
     @Async

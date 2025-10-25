@@ -120,7 +120,8 @@ public class SecurityConfig {
                 // CORS preflight requests - allow OPTIONS for all endpoints
                 .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
 
-
+                .requestMatchers("/api/v1/users/all/ranking").permitAll()
+                .requestMatchers("/api/v1/users/batch/get").permitAll()
                 // Other protected APIs - require authentication
                 .requestMatchers("/api/v1/users/**").authenticated()
                 .requestMatchers("/api/v1/library/**").authenticated()
