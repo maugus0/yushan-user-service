@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -263,4 +264,86 @@ public class UserControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("User not found"));
     }
+
+    @Test
+    @WithMockUser
+    void getAllUsersForRanking_Success() throws Exception {
+        // Arrange
+        UserProfileResponseDTO user1 = new UserProfileResponseDTO();
+        user1.setUuid(UUID.randomUUID().toString());
+        user1.setUsername("user1");
+
+        UserProfileResponseDTO user2 = new UserProfileResponseDTO();
+        user2.setUuid(UUID.randomUUID().toString());
+        user2.setUsername("user2");
+
+        List<UserProfileResponseDTO> userList = List.of(user1, user2);
+        when(userService.getAllUsers()).thenReturn(userList);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/v1/users/all/ranking")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("User ranking retrieved successfully"))
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].username").value("user1"))
+                .andExpect(jsonPath("$.data[1].username").value("user2"));
+
+        verify(userService).getAllUsers();
+    }
+
+    @Test
+    @WithMockUser
+    void getUsersBatch_Success() throws Exception {
+        // Arrange
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+        List<UUID> requestIds = List.of(id1, id2);
+
+        UserProfileResponseDTO user1 = new UserProfileResponseDTO();
+        user1.setUuid(id1.toString());
+        user1.setUsername("user1");
+
+        UserProfileResponseDTO user2 = new UserProfileResponseDTO();
+        user2.setUuid(id2.toString());
+        user2.setUsername("user2");
+
+        List<UserProfileResponseDTO> responseList = List.of(user1, user2);
+        when(userService.getUsersByIds(requestIds)).thenReturn(responseList);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/users/batch/get")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestIds)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("User profiles retrieved successfully"))
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].uuid").value(id1.toString()))
+                .andExpect(jsonPath("$.data[1].uuid").value(id2.toString()));
+
+        verify(userService).getUsersByIds(requestIds);
+    }
+
+    @Test
+    @WithMockUser
+    void getUsersBatch_WithEmptyList_ReturnsEmptyList() throws Exception {
+        // Arrange
+        List<UUID> requestIds = List.of();
+        when(userService.getUsersByIds(requestIds)).thenReturn(List.of());
+
+        // Act & Assert
+        mockMvc.perform(post("/api/v1/users/batch/get")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestIds)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.length()").value(0));
+
+        verify(userService).getUsersByIds(requestIds);
+    }
+
 }
