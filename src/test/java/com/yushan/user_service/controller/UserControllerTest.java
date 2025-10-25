@@ -243,7 +243,7 @@ public class UserControllerTest {
         when(userService.getUserProfile(targetUserId)).thenReturn(targetUserProfile);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/users/{userId}", targetUserId)
+        mockMvc.perform(get("/api/v1/users/{userId}/profile", targetUserId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -258,7 +258,7 @@ public class UserControllerTest {
         when(userService.getUserProfile(nonExistentUserId)).thenReturn(null);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/users/{userId}", nonExistentUserId)
+        mockMvc.perform(get("/api/v1/users/{userId}/profile", nonExistentUserId)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("User not found"));
