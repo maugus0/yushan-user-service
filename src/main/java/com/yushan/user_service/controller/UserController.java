@@ -127,7 +127,7 @@ public class UserController {
     /**
      * get a user's profile
      */
-    @GetMapping("/{userId}")
+    @GetMapping("/{userId}/profile")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<UserProfileResponseDTO> getUserDetail(@PathVariable UUID userId) {
         UserProfileResponseDTO dto = userService.getUserProfile(userId);
