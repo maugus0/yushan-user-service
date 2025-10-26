@@ -283,9 +283,9 @@ public class LibraryService {
         dto.setUpdateTime(novelLibrary.getUpdateTime());
 
         if (novel != null) {
-            dto.setNovelTitle(novel.novelTitle());
-            dto.setNovelAuthor(novel.novelAuthor());
-            dto.setNovelCover(novel.novelCover());
+            dto.setNovelTitle(novel.title());
+            dto.setNovelAuthor(novel.authorUsername());
+            dto.setNovelCover(novel.coverImgUrl());
             dto.setChapterCnt(novel.chapterCnt());
         }
         if (chapter != null) {
