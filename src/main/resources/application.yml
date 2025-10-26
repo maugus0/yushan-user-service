@@ -7,6 +7,25 @@ spring:
   config:
     import: "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
 
+# Actuator Configuration for Prometheus Metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: user-service
+      environment: production
+
 # Logging Configuration
 logging:
   level:
