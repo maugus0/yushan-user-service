@@ -113,7 +113,7 @@ class LibraryResponseDTOTest {
         Date now = new Date();
         LibraryResponseDTO dto = new LibraryResponseDTO(1, 101, "Title", "Author", "cover.jpg", 50, 5, 10, now, now);
         String dtoAsString = dto.toString();
-        assertTrue(dtoAsString.contains("novelTitle=Title"));
-        assertTrue(dtoAsString.contains("novelAuthor=Author"));
+        assertTrue(dtoAsString.contains("title=Title"));
+        assertTrue(dtoAsString.contains("authorUsername=Author"));
     }
 }
