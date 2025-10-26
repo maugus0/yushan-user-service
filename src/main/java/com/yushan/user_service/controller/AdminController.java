@@ -18,7 +18,6 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
-@CrossOrigin(origins = "*")
 @Validated
 public class AdminController {
 
