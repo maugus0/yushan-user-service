@@ -16,7 +16,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/library")
-@CrossOrigin(origins = "*")
 @Validated
 public class LibraryController {
 
